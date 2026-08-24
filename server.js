@@ -1,33 +1,48 @@
-const WebSocket = require('ws');
+const express = require('express');
+const app = express();
+app.use(express.json());
 
-// Render asigna un puerto automático usando process.env.PORT
-const port = process.env.PORT || 10000;
-const wss = new WebSocket.Server({ port });
+let players = {};
+const MAX_PLAYERS = 6;
+const INACTIVE_TIMEOUT = 12 * 60 * 1000; // 12 minutes in milliseconds
 
-console.log(`Servidor iniciado en puerto ${port}`);
+app.post('/update', (req, res) => {
+    const { id, x, y, z, yaw, shooting, targetHit } = req.body;
+    const now = Date.now();
 
-wss.on('connection', (ws) => {
-    // Asigna un ID único al jugador
-    const id = Math.floor(Math.random() * 100000);
-    
-    // Le envía su ID al conectarse
-    ws.send(`ID,${id}`);
+    // Kick player if room is full and this is a new player
+    if (!players[id] && Object.keys(players).length >= MAX_PLAYERS) {
+        return res.status(403).json({ error: "ROOM_FULL" });
+    }
 
-    ws.on('message', (message) => {
-        // Reenvía lo que envía este jugador a todos los demás clientes
-        wss.clients.forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(`${id},${message}`);
-            }
-        });
-    });
+    // Clean up inactive players (12+ minutes)
+    for (let playerId in players) {
+        if (now - players[playerId].lastSeen > INACTIVE_TIMEOUT) {
+            delete players[playerId];
+        }
+    }
 
-    ws.on('close', () => {
-        // Notifica a los demás que este jugador se desconectó
-        wss.clients.forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(`LEAVE,${id}`);
-            }
-        });
-    });
+    // Initialize new player join timestamp
+    if (!players[id]) {
+        players[id] = { kills: 0, joinedAt: now };
+    }
+
+    // Handle Kills / Hits
+    if (targetHit && players[targetHit]) {
+        players[id].kills = (players[id].kills || 0) + 1;
+        delete players[targetHit];
+    }
+
+    // Update player position and activity timestamp
+    players[id] = {
+        ...players[id],
+        x, y, z, yaw,
+        shooting: shooting || false,
+        lastSeen: now
+    };
+
+    res.json(players);
 });
+
+const port = process.env.PORT || 10000;
+app.listen(port, () => console.log(`Server listening on port ${port}`));
