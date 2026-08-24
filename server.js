@@ -5,7 +5,10 @@ app.use(express.json());
 let players = {};
 const MAX_PLAYERS = 6;
 const INACTIVE_TIMEOUT = 12 * 60 * 1000; // 12 minutos
-const DAMAGE_MAP = { rifle: 8, pistol: 19, sniper: 91 };
+
+// Mapeo directo usando tus números de arma
+// 1 = Rifle (8 dmg), 2 = Pistola (19 dmg), 3 = Sniper (91 dmg)
+const DAMAGE_MAP = { 1: 8, 2: 19, 3: 91 };
 
 app.post('/update', (req, res) => {
     const { id, x, y, z, yaw, shooting, targetHit, weaponUsed } = req.body;
@@ -36,7 +39,7 @@ app.post('/update', (req, res) => {
     if (targetHit && players[targetHit]) {
         const victim = players[targetHit];
         
-        // Solo aplica daño si el enemigo NO tiene escudo activado
+        // Aplica daño según el número de arma (1, 2 o 3) si la víctima no tiene escudo
         if (!victim.isShielded) {
             const damage = DAMAGE_MAP[weaponUsed] || 10;
             victim.hp -= damage;
@@ -45,7 +48,7 @@ app.post('/update', (req, res) => {
             if (victim.hp <= 0) {
                 players[id].kills = (players[id].kills || 0) + 1;
                 
-                // Respawn con vida llena y Forcefield de 2 segundos (2000 ms)
+                // Respawn con 100 HP y Forcefield de 2 segundos (2000 ms)
                 victim.hp = 100;
                 victim.isShielded = true;
                 victim.shieldUntil = now + 2000;
@@ -53,7 +56,7 @@ app.post('/update', (req, res) => {
         }
     }
 
-    // Actualizar datos de posicion
+    // Actualizar datos de posición
     players[id] = {
         ...players[id],
         x, y, z, yaw,
