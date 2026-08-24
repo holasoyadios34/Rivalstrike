@@ -4,36 +4,56 @@ app.use(express.json());
 
 let players = {};
 const MAX_PLAYERS = 6;
-const INACTIVE_TIMEOUT = 12 * 60 * 1000; // 12 minutes in milliseconds
+const INACTIVE_TIMEOUT = 12 * 60 * 1000; // 12 minutos
+const DAMAGE_MAP = { rifle: 8, pistol: 19, sniper: 91 };
 
 app.post('/update', (req, res) => {
-    const { id, x, y, z, yaw, shooting, targetHit } = req.body;
+    const { id, x, y, z, yaw, shooting, targetHit, weaponUsed } = req.body;
     const now = Date.now();
 
-    // Kick player if room is full and this is a new player
     if (!players[id] && Object.keys(players).length >= MAX_PLAYERS) {
         return res.status(403).json({ error: "ROOM_FULL" });
     }
 
-    // Clean up inactive players (12+ minutes)
+    // Limpieza de inactivos
     for (let playerId in players) {
         if (now - players[playerId].lastSeen > INACTIVE_TIMEOUT) {
             delete players[playerId];
         }
     }
 
-    // Initialize new player join timestamp
+    // Inicializar jugador nuevo
     if (!players[id]) {
-        players[id] = { kills: 0, joinedAt: now };
+        players[id] = { kills: 0, hp: 100, isShielded: false, shieldUntil: 0 };
     }
 
-    // Handle Kills / Hits
+    // Verificar si se venció su escudo de 2 segundos
+    if (players[id].isShielded && now > players[id].shieldUntil) {
+        players[id].isShielded = false;
+    }
+
+    // Procesar Daño y Respawn
     if (targetHit && players[targetHit]) {
-        players[id].kills = (players[id].kills || 0) + 1;
-        delete players[targetHit];
+        const victim = players[targetHit];
+        
+        // Solo aplica daño si el enemigo NO tiene escudo activado
+        if (!victim.isShielded) {
+            const damage = DAMAGE_MAP[weaponUsed] || 10;
+            victim.hp -= damage;
+
+            // Si muere el enemigo
+            if (victim.hp <= 0) {
+                players[id].kills = (players[id].kills || 0) + 1;
+                
+                // Respawn con vida llena y Forcefield de 2 segundos (2000 ms)
+                victim.hp = 100;
+                victim.isShielded = true;
+                victim.shieldUntil = now + 2000;
+            }
+        }
     }
 
-    // Update player position and activity timestamp
+    // Actualizar datos de posicion
     players[id] = {
         ...players[id],
         x, y, z, yaw,
