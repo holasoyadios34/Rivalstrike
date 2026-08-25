@@ -1,16 +1,9 @@
 const express = require('express');
+const cors = require('cors'); // Usar librería nativa de CORS
 const app = express();
 
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
-    next();
-});
-
+// Permitir peticiones desde cualquier origen (incluyendo PenguinMod)
+app.use(cors());
 app.use(express.json());
 
 let players = {};
