@@ -12,7 +12,8 @@ const INACTIVE_TIMEOUT = 12 * 60 * 1000;
 const DAMAGE_MAP = { 1: 8, 2: 19, 3: 91 };
 
 app.post('/update', (req, res) => {
-    const { id, x, y, z, yaw, shooting, targetHit, weaponUsed } = req.body;
+    // 1. Añadimos 'username' a las variables que extraemos del cuerpo de la petición
+    const { id, x, y, z, yaw, shooting, targetHit, weaponUsed, username } = req.body;
     const now = Date.now();
 
     if (!players[id] && Object.keys(players).length >= MAX_PLAYERS) {
@@ -26,7 +27,14 @@ app.post('/update', (req, res) => {
     }
 
     if (!players[id]) {
-        players[id] = { kills: 0, hp: 100, isShielded: false, shieldUntil: 0 };
+        // 2. Guardamos un nombre por defecto si entra por primera vez
+        players[id] = { 
+            kills: 0, 
+            hp: 100, 
+            isShielded: false, 
+            shieldUntil: 0,
+            username: username || "Guest" 
+        };
     }
 
     if (players[id].isShielded && now > players[id].shieldUntil) {
@@ -52,6 +60,8 @@ app.post('/update', (req, res) => {
         ...players[id],
         x, y, z, yaw,
         shooting: shooting || false,
+        // 3. Actualizamos el username por si el jugador cambió de nombre o lo envió de nuevo
+        username: username || players[id].username || "Guest",
         lastSeen: now
     };
 
