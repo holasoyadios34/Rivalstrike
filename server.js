@@ -8,7 +8,7 @@ app.use(express.json());
 
 let players = {};
 const MAX_PLAYERS = 6;
-const INACTIVE_TIMEOUT = 12 * 60 * 1000;
+const INACTIVE_TIMEOUT = 6000;
 const DAMAGE_MAP = { 1: 8, 2: 19, 3: 91 };
 
 app.post('/update', (req, res) => {
