@@ -6,7 +6,7 @@ The original server is running on free render instance, if the server outages or
 <img width="800" height="600" alt="raspberry pi 3 in the freezer meme" src="https://github.com/user-attachments/assets/f7130247-4d44-4c7c-aff8-a1bc6e695f2f" />
 
 Special notes when i use the pi server:
-if the server outages, may be my lights out or my internet have troubles
+if the new server outages, may my lights out or my internet have troubles
 i think is better than a free render server, cuz the pi 3 has 1gb of ram, but the render free server has a half of gigabyte, and may be worse cpu than the BCM2827
 
 9/25/26 Stats:
