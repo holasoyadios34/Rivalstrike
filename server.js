@@ -1,8 +1,7 @@
 const express = require('express');
-const cors = require('cors'); // Usar librería nativa de CORS
+const cors = require('cors');
 const app = express();
 
-// Permitir peticiones desde cualquier origen (incluyendo PenguinMod)
 app.use(cors());
 app.use(express.json());
 
@@ -12,12 +11,12 @@ const INACTIVE_TIMEOUT = 6000;
 const DAMAGE_MAP = { 1: 8, 2: 19, 3: 91 };
 
 app.post('/update', (req, res) => {
-    // 1. Añadimos 'username' a las variables que extraemos del cuerpo de la petición
+    
     const { id, x, y, z, yaw, shooting, targetHit, weaponUsed, username } = req.body;
     const now = Date.now();
 
     if (!players[id] && Object.keys(players).length >= MAX_PLAYERS) {
-        return res.status(403).json({ error: "ROOM_FULL" });
+        return res.status(403).json({ error: "This server is full, try again later" });
     }
 
     for (let playerId in players) {
@@ -27,13 +26,13 @@ app.post('/update', (req, res) => {
     }
 
     if (!players[id]) {
-        // 2. Guardamos un nombre por defecto si entra por primera vez
+        
         players[id] = { 
             kills: 0, 
             hp: 100, 
             isShielded: false, 
             shieldUntil: 0,
-            username: username || "Guest" 
+            username: username || "RandomPlayer" 
         };
     }
 
@@ -60,7 +59,6 @@ app.post('/update', (req, res) => {
         ...players[id],
         x, y, z, yaw,
         shooting: shooting || false,
-        // 3. Actualizamos el username por si el jugador cambió de nombre o lo envió de nuevo
         username: username || players[id].username || "Guest",
         lastSeen: now
     };
